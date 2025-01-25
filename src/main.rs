@@ -14,10 +14,13 @@ pub fn total(data: Vec<(DateTime<FixedOffset>, i32)>) -> i64 {
         .zip(data.iter().skip(1))
         .inspect(|x| println!("{:?}", x))
         .map(|(x, y)| {
-            let duration = y.0.signed_duration_since(x.0);
-            let value = x.1;
-            let total = value as i64 * duration.num_seconds();
-            total
+            // trapezoidal rule
+            let (time1, value1) = x;
+            let (time2, value2) = y;
+            let time_diff = time2.signed_duration_since(*time1).num_microseconds().unwrap() as i64;
+            let value_diff = value2 - value1;
+            let area = ((value1 + value2) as i64).checked_mul(time_diff).unwrap() / 2;
+            area as i64
         })
         .inspect(|x| println!("vvv: {:?}", x))
         .collect();
@@ -41,7 +44,7 @@ mod tests {
     fn test_total(){
         // array with timestamp and value
         let data = vec![(DateTime::parse_from_rfc3339("2025-01-24T03:15:17.400946+00:00").unwrap(), 100), (DateTime::parse_from_rfc3339("2025-01-24T03:14:15.335619+00:00").unwrap(), 200), (DateTime::parse_from_rfc3339("2025-01-24T03:13:13.321782+00:00").unwrap(), 300)];
-        assert_eq!(total(data), 18600);
+        assert_eq!(total(data), 24813258300);
     }
 }
 
